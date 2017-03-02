@@ -104,6 +104,7 @@ VirtualSequence::VirtualSequence(const string &_ref, bool _read_only)
 }
 
 // Constructor de copia que solo almacena un puntero al buffer de texto
+// Tambien incluye las mutaciones del original en el mapa de la nueva instancia
 VirtualSequence::VirtualSequence(const VirtualSequence &original){
 
 	size = original.size;
@@ -112,6 +113,9 @@ VirtualSequence::VirtualSequence(const VirtualSequence &original){
 	
 	cur_count = 0;
 	cur_read = original.cur_read;
+	
+	// Muaciones
+	mutations.insert(original.mutations.begin(), original.mutations.end());
 }
 
 VirtualSequence::~VirtualSequence(){
@@ -131,6 +135,7 @@ void VirtualSequence::mutate(mt19937 *arg_rng){
 	if(arg_rng == NULL){
 		arg_rng = &rng;
 	}
+	/*
 	// Version de texto completo, podría usarse una expresión reducida de la mutacion
 	// En esta version NO estoy verificando que la mutacion sea efectiva
 	uniform_int_distribution<> pos_dist(0, size-1);
@@ -138,6 +143,62 @@ void VirtualSequence::mutate(mt19937 *arg_rng){
 	seq_size_t pos = pos_dist(*arg_rng);
 	char value = alphabet[val_dist(*arg_rng)];
 	mutations[pos] = value;
+	*/
+	
+	
+	// Version replica de Reference
+	uniform_int_distribution<> mutation(0U, size-1);
+	uint32_t m = mutation(rng);
+	int p = 0, n = 0;
+	char mask = 1;
+	p = int(floor(double(m)/double(4)));
+	n = int(m%uint32_t(4));
+	
+	// Tomo el dato y le aplico las mutaciones apropiadas
+	unsigned char dato = data[p];
+	// mutaciones para el dato
+//	for(unsigned int i = 0; i < 4; ++i){
+//		map<seq_size_t, char>::iterator res = mutations.find(p+i);
+//		if( res != mutations.end() ){
+//			switch ( res->second ){
+//				case 'A' : 
+//					
+//					break;
+//			}
+//			
+//		}
+//	}
+	
+	char value = (dato)&(mask<<n);
+	
+	if(!value) value = mask<<n;
+	
+//	this->_data[p] ^= value;
+	unsigned char c = dato;
+	c ^= value;
+	
+	// Revision de resultados (notar que estoy reconstruyendo la posicion del char modificado)
+	// Eso es porque el original usa un rand en nucleotidos, no en bits (que seria mas directo)
+	
+	cout<<"VirtualSequence::mutate - data["<<p<<"]: "<<(unsigned int)dato<<" -> "<<(unsigned int)c<<"\n";
+	mask = 0x1;
+	for( n = 0; n < 8; ++n ){
+		if( (c & mask) != (dato & mask) ){
+			break;
+		}
+		mask <<= 1;
+	}
+	n /= 2;
+	cout<<"VirtualSequence::mutate - Pos real: "<<(p*4+3-n)<<", char: "<<alphabet[ (c>>(n*2)) ]<<"\n";
+	
+	cout<<"VirtualSequence::mutate - Agregando mutations["<<p*4+3-n<<"/"<<size<<"]: "<<alphabet[ (c>>(n*2)) ]<<"\n";
+	mutations[p*4+3-n] = alphabet[ (c>>(n*2)) ];
+	
+	
+	// Version simple con 1 solo rand (en BITS!)
+	
+	
+	
 }
 
 char VirtualSequence::at(seq_size_t pos){
