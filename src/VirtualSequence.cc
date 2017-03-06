@@ -2,7 +2,7 @@
 
 const unsigned int VirtualSequence::alphabet_size = 4;
 const char VirtualSequence::alphabet[] = {'A', 'C', 'G', 'T'};
-//mt19937 VirtualSequence::class_rng;
+////mt19937 VirtualSequence::class_rng;
 
 VirtualSequence::VirtualSequence(bool _read_only){
 
@@ -195,19 +195,27 @@ void VirtualSequence::mutate(mt19937 *arg_rng){
 	mutations[p*4+3-n] = alphabet[ (c>>(n*2)) ];
 	
 	
-	// Version simple con 1 solo rand (en BITS!)
-	
-	
+	// Version directa en bits
+	// Notar que aqui pos representa la poscion del bit mutado, de ahi el size*2
+//	uniform_int_distribution<> pos_dist(0, (size<<1) - 1);
+//	seq_size_t pos = pos_dist(*arg_rng);
+//	set<seq_size_t>::iterator it = mutations.find(pos);
+//	if(it == mutations.end()){
+//		mutations.insert(pos);
+//	}
+//	else{
+//		mutations.erase(it);
+//	}
 	
 }
 
-char VirtualSequence::at(seq_size_t pos){
+char VirtualSequence::at(seq_size_t pos) const{
 	if(pos >= size || data == NULL){
 		// exception !
 		return 0;
 	}
 	// Aplico la mutacion si existe (es decir, tiene prioridad)
-	map<seq_size_t, char>::iterator res = mutations.find(pos);
+	map<seq_size_t, char>::const_iterator res = mutations.find(pos);
 	if( res != mutations.end() ){
 		return res->second;
 	}
@@ -226,6 +234,33 @@ char VirtualSequence::at(seq_size_t pos){
 //		cout<<"VirtualSequence::at - final val: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 		return alphabet[val];
 	}
+	
+	/*
+	// Version con mutaciones a nivel de bits
+	// Primero tomo el byte (data en posicion pos/4)
+	unsigned char byte = data[ pos>>2 ];
+//	cout<<"VirtualSequence::at - pos: "<<pos<<", byte: "<<(unsigned int)byte<<"\n";
+	// Ahora tomo el valor correcto del byte, los 2 bits que busco
+	// Para eso aplico la mascara 0x3 (2 bits) corrida en el resto de pos/4, x2
+	// El resto de pos/4 lo calculo como pos & 0x3 (por los 2 bits de la division)
+	// El x2 (porque son 2 bits por posicion) lo aplico con un <<1 adicional
+	unsigned char val = byte & (0x3 << ((pos & 0x3)<<1) );
+//	cout<<"VirtualSequence::at - val: "<<(unsigned int)val<<"\n";
+	// Por ultimo, muevo el valor (que estaba en medio del byte) a su posicion inicial
+	val >>= ((pos & 0x3)<<1);
+//	cout<<"VirtualSequence::at - final val: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
+	// Ahora aplico mutaciones a ambos bits
+	seq_size_t pos_bit_1 = pos<<1;
+	seq_size_t pos_bit_2 = pos<<1 + 1;
+	if(mutations.find(pos_bit_1) != mutations.end()){
+		val ^= 0x1;
+	}
+	if(mutations.find(pos_bit_2) != mutations.end()){
+		val ^= 0x2;
+	}
+	return alphabet[val];
+	*/
+	
 }
 
 string VirtualSequence::to_string(){
@@ -252,6 +287,12 @@ vector< pair<seq_size_t, char> > VirtualSequence::get_mutations(){
 	return res;
 }
 
+//vector<seq_size_t> VirtualSequence::get_mutations(){
+//	vector<seq_size_t> res;
+//	res.insert(mutations.begin(), mutations.end());
+//	return res;
+//}
+
 void VirtualSequence::increase(){
 	++cur_count;
 }
@@ -269,12 +310,29 @@ bool VirtualSequence::read_only() const{
 }
 
 bool VirtualSequence::operator==(const VirtualSequence &seq){
+	/*
 	if( mutations.size() != seq.mutations.size() ){
 		return false;
 	}
 	map<seq_size_t, char>::const_iterator it1, it2;
 	for( it1 = mutations.begin(), it2 = seq.mutations.begin(); it1 != mutations.end(); it1++, it2++ ){
 		if( (it1->first != it2->first) || (it1->second != it2->second) ){
+			return false;
+		}
+	}
+	return true;
+	*/
+	
+	// Version mas general
+	// Notar que este esquema es MUCHO mas lento
+	// Se puede implementar una version mejor de la revision de secuencia y de mutaciones
+	// Esa version tendria que revisar el largo, los punteros a la secuencia,
+	// ... la secuencia (si los punteros son diferentes) y luego cada estructura de mutaciones
+	if( length() != seq.length() ){
+		return false;
+	}
+	for(unsigned int i = 0; i < length(); ++i ){
+		if(at(i) != seq.at(i)){
 			return false;
 		}
 	}

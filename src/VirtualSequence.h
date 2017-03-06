@@ -43,6 +43,7 @@ protected:
 	
 	// Variables de la instancia (mutaciones)
 	map<seq_size_t, char> mutations;
+//	set<seq_size_t> mutations;
 	
 	uint32_t cur_count;
 	bool cur_read;
@@ -58,7 +59,7 @@ public:
 	virtual ~VirtualSequence();
 	
 	void mutate(mt19937 *arg_rng = NULL);
-	char at(seq_size_t pos);
+	char at(seq_size_t pos) const;
 	
 //	void mutatePunctual();
 //	void mutateOTHER();
@@ -66,6 +67,7 @@ public:
 	string to_string();
 	
 	vector< pair<seq_size_t, char> > get_mutations();
+//	vector<seq_size_t> get_mutations();
 	
 	void increase();
 	void decrease();
