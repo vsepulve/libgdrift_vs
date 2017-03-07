@@ -119,6 +119,7 @@ class Population{
 				return((N/(N-1.0))*(1.0-sum));
 			}
 			
+			/*
 			double number_of_haplotypes_seq(const vector<VirtualSequence*> &_sequences){
 				
 				map< vector< pair<seq_size_t, char> > , double> haplotypes;
@@ -141,6 +142,7 @@ class Population{
 				return (N/(N-1.0))*(1.0-sum);
 				
 			}
+			*/
 			
 			double number_of_segregating_sites(const vector<string> &_sequences){
 				double segregating_sites=0.0;
@@ -251,7 +253,7 @@ class Population{
 
 				map<uint32_t,map<uint32_t,vector<string>>> sequences;
 //				map<uint32_t,map<uint32_t,vector<VirtualSequence*>>> sequences;
-
+				cout<<"Population - Llenando sequences\n";
 				for(auto& individual : sample){
 					for(uint32_t cid=0U;cid<individual->n_chromosomes();cid++){
 						for(int pid=0;pid<int(individual->ploidy());pid++){
@@ -262,7 +264,7 @@ class Population{
 						}
 					}
 				}
-
+				cout<<"Population - Sequences terminado\n";
 				//this->rarest_nucleotides_statistics(sequences[0][0]);
 	
 				double mean_of_the_number_of_pairwise_differences,variance_of_the_number_of_pairwise_differences;

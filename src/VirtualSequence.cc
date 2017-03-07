@@ -19,14 +19,12 @@ VirtualSequence::VirtualSequence(const char *_ref, unsigned int _size, bool _rea
 	
 //	cout<<"VirtualSequence - Inicio (text: "<<_ref<<", size: "<<_size<<")\n";
 	size = (seq_size_t)_size;
-//	data = new char[size+1];
 	unsigned int data_size = (size>>2);
 	if( size & 0x3 ){
 		++data_size;
 	}
 	data = new unsigned char[ data_size ];
 	memset(data, 0, data_size);
-//	strcpy(data, _ref);
 	unsigned char *p = data;
 	unsigned int disp = 0;
 	unsigned char value = 0;
@@ -45,6 +43,7 @@ VirtualSequence::VirtualSequence(const char *_ref, unsigned int _size, bool _rea
 		*p |= value;
 //		cout<<"*p: "<<(unsigned int)(*p)<<"\n";
 		disp += 2;
+		//if(disp == 8)
 		if(disp > 6){
 			++p;
 			disp = 0;
@@ -106,15 +105,18 @@ VirtualSequence::VirtualSequence(const string &_ref, bool _read_only)
 // Constructor de copia que solo almacena un puntero al buffer de texto
 // Tambien incluye las mutaciones del original en el mapa de la nueva instancia
 VirtualSequence::VirtualSequence(const VirtualSequence &original){
-
+	
+	//cout<<"VirtualSequence - Copia\n";
 	size = original.size;
 	data = original.data;
 	owns_data = false;
+	//cout<<"VirtualSequence - size: "<<size<<". data[0]: "<<((data==NULL)?(0xffffffff):(unsigned int)data[0])<<"\n";
 	
 	cur_count = 0;
 	cur_read = original.cur_read;
 	
 	// Muaciones
+	//cout<<"VirtualSequence - Agregando "<<original.mutations.size()<<" mutaciones\n";
 	mutations.insert(original.mutations.begin(), original.mutations.end());
 }
 
@@ -145,7 +147,7 @@ void VirtualSequence::mutate(mt19937 *arg_rng){
 	mutations[pos] = value;
 	*/
 	
-	
+	/*
 	// Version replica de Reference
 	uniform_int_distribution<> mutation(0U, size-1);
 	uint32_t m = mutation(rng);
@@ -193,19 +195,55 @@ void VirtualSequence::mutate(mt19937 *arg_rng){
 	
 	cout<<"VirtualSequence::mutate - Agregando mutations["<<p*4+3-n<<"/"<<size<<"]: "<<alphabet[ (c>>(n*2)) ]<<"\n";
 	mutations[p*4+3-n] = alphabet[ (c>>(n*2)) ];
+	*/
 	
 	
 	// Version directa en bits
 	// Notar que aqui pos representa la poscion del bit mutado, de ahi el size*2
-//	uniform_int_distribution<> pos_dist(0, (size<<1) - 1);
-//	seq_size_t pos = pos_dist(*arg_rng);
-//	set<seq_size_t>::iterator it = mutations.find(pos);
-//	if(it == mutations.end()){
-//		mutations.insert(pos);
-//	}
-//	else{
-//		mutations.erase(it);
-//	}
+	uniform_int_distribution<> pos_dist(0, (size<<1) - 1);
+	seq_size_t pos = pos_dist(*arg_rng);
+	set<seq_size_t>::iterator it = mutations.find(pos);
+	if(it == mutations.end()){
+		mutations.insert(pos);
+	}
+	else{
+		mutations.erase(it);
+	}
+	
+	
+	// Condicion de descompresion
+	// Las mutaciones se vuelcan en un nuevo arreglo de datos si son muchas
+	// Falta revisar esta condicion para que sea mas clara y precisa
+	//cout<<"VirtualSequence::mutate - Mutaciones: "<<mutations.size()<<"\n";
+	if( mutations.size() >= size/4 ){
+		// Si NO es dueño de datos, pedirlos antes de agrgar mutaciones
+		// Si ya tiene datos, bsata con agregar las mutaciones
+		//cout<<"VirtualSequence::mutate - Descomprimiendo secuencia por numero de mutaciones\n";
+		if(!owns_data){
+			//cout<<"VirtualSequence::mutate - Pidiendo memoria\n";
+			unsigned char *original_data = data;
+			unsigned int data_size = (size>>2);
+			if( size & 0x3 ){
+				++data_size;
+			}
+			data = new unsigned char[ data_size ];
+			//memset(data, 0, data_size);
+			memcpy(data, original_data, size);
+			owns_data = true;
+		}
+		set<seq_size_t>::iterator it;
+		seq_size_t pos;
+		unsigned int pos_byte;
+		unsigned int pos_bit;
+		for(it = mutations.begin(); it != mutations.end(); it++){
+			pos = *it;
+			pos_byte = (pos >> 3);
+			pos_bit = (pos & 0x7);
+			data[pos_byte] ^= (0x1 << pos_bit);
+		}
+		mutations.clear();
+	}
+	
 	
 }
 
@@ -214,6 +252,7 @@ char VirtualSequence::at(seq_size_t pos) const{
 		// exception !
 		return 0;
 	}
+	/*
 	// Aplico la mutacion si existe (es decir, tiene prioridad)
 	map<seq_size_t, char>::const_iterator res = mutations.find(pos);
 	if( res != mutations.end() ){
@@ -234,32 +273,35 @@ char VirtualSequence::at(seq_size_t pos) const{
 //		cout<<"VirtualSequence::at - final val: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 		return alphabet[val];
 	}
+	*/
 	
-	/*
 	// Version con mutaciones a nivel de bits
 	// Primero tomo el byte (data en posicion pos/4)
 	unsigned char byte = data[ pos>>2 ];
-//	cout<<"VirtualSequence::at - pos: "<<pos<<", byte: "<<(unsigned int)byte<<"\n";
+	//cout<<"VirtualSequence::at - pos: "<<pos<<", byte: "<<(unsigned int)byte<<"\n";
 	// Ahora tomo el valor correcto del byte, los 2 bits que busco
 	// Para eso aplico la mascara 0x3 (2 bits) corrida en el resto de pos/4, x2
 	// El resto de pos/4 lo calculo como pos & 0x3 (por los 2 bits de la division)
 	// El x2 (porque son 2 bits por posicion) lo aplico con un <<1 adicional
 	unsigned char val = byte & (0x3 << ((pos & 0x3)<<1) );
-//	cout<<"VirtualSequence::at - val: "<<(unsigned int)val<<"\n";
+	//cout<<"VirtualSequence::at - val: "<<(unsigned int)val<<"\n";
 	// Por ultimo, muevo el valor (que estaba en medio del byte) a su posicion inicial
 	val >>= ((pos & 0x3)<<1);
-//	cout<<"VirtualSequence::at - final val: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
+	//cout<<"VirtualSequence::at - val ajustado: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	// Ahora aplico mutaciones a ambos bits
 	seq_size_t pos_bit_1 = pos<<1;
-	seq_size_t pos_bit_2 = pos<<1 + 1;
+	seq_size_t pos_bit_2 = (pos<<1) + 1;
+	//cout<<"VirtualSequence::at - Buscando mutacion en bits: "<<pos_bit_1<<" y "<<pos_bit_2<<"\n";
 	if(mutations.find(pos_bit_1) != mutations.end()){
 		val ^= 0x1;
+		//cout<<"VirtualSequence::at - val mut bit 1: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	}
 	if(mutations.find(pos_bit_2) != mutations.end()){
 		val ^= 0x2;
+		//cout<<"VirtualSequence::at - val mut bit 2: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	}
+	//cout<<"VirtualSequence::at - val final: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	return alphabet[val];
-	*/
 	
 }
 
@@ -278,6 +320,7 @@ string VirtualSequence::to_string(){
 	return seq;
 }
 
+/*
 vector< pair<seq_size_t, char> > VirtualSequence::get_mutations(){
 	vector< pair<seq_size_t, char> > res;
 	map<seq_size_t, char>::iterator it;
@@ -286,12 +329,13 @@ vector< pair<seq_size_t, char> > VirtualSequence::get_mutations(){
 	}
 	return res;
 }
+*/
 
-//vector<seq_size_t> VirtualSequence::get_mutations(){
-//	vector<seq_size_t> res;
-//	res.insert(mutations.begin(), mutations.end());
-//	return res;
-//}
+vector<seq_size_t> VirtualSequence::get_mutations(){
+	vector<seq_size_t> res;
+	res.insert(res.begin(), mutations.begin(), mutations.end());
+	return res;
+}
 
 void VirtualSequence::increase(){
 	++cur_count;
@@ -323,6 +367,7 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 	return true;
 	*/
 	
+	/*
 	// Version mas general
 	// Notar que este esquema es MUCHO mas lento
 	// Se puede implementar una version mejor de la revision de secuencia y de mutaciones
@@ -337,6 +382,53 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 		}
 	}
 	return true;
+	*/
+	
+	
+	// Version detallada de revision por componente
+	if( length() != seq.length() ){
+		return false;
+	}
+	// Creo que esta comparacion hay que hacerla al reves, verificar si son iguales para acelerar, revisar por caracter si no se puede
+	// Eso es porque los datos PUEDEN ser diferentes y aun asi ser iguales las secuencias considerando las mutaciones
+	if( data == seq.data ){
+		// Solo en este caso se puede facilmente comparar las mutaciones sin los datos
+		set<seq_size_t>::const_iterator it1, it2;
+		for( it1 = mutations.begin(), it2 = seq.mutations.begin(); it1 != mutations.end(); it1++, it2++ ){
+			if( *it1 != *it2 ){
+				return false;
+			}
+		}
+		return true;
+	}
+	for(unsigned int i = 0; i < length(); ++i ){
+		if(at(i) != seq.at(i)){
+			return false;
+		}
+	}
+	return true;
+	
+	/*
+	if( data != seq.data ){
+		// aqui habria que comparar los bytes
+		for(unsigned int i = 0; i < size; ++i){
+			if(data[i] != seq.data[i]){
+				return false;
+			}
+		}
+	}
+	// Solo si los datos son iguales, es necesario comparar mutaciones
+	set<seq_size_t>::const_iterator it1, it2;
+	for( it1 = mutations.begin(), it2 = seq.mutations.begin(); it1 != mutations.end(); it1++, it2++ ){
+		if( *it1 != *it2 ){
+			return false;
+		}
+	}
+	return true;
+	*/
+	
+	
+	
 }
 
 unsigned int VirtualSequence::length() const{

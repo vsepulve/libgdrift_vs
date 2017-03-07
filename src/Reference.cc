@@ -27,6 +27,7 @@ bool Reference::read_only(void) const{
 void Reference::mutate(void){
 	++count_mut;
 	
+	/*
    uniform_int_distribution<> mutation(0U,this->_nucleotides-1);
    uint32_t m=mutation(rng);
    int p=0,n=0;
@@ -34,7 +35,7 @@ void Reference::mutate(void){
 
    p=int(floor(double(m)/double(N_NUCLEOTIDES)));
    n=int(m%uint32_t(N_NUCLEOTIDES));
-
+	*/
    /*uint32_t size=uint32_t(ceil(double(this->_nucleotides)/double(N_NUCLEOTIDES)));
    uniform_int_distribution<> position(0U,size-1U);
    uniform_int_distribution<> nucleotide(0,CHAR_BIT-1);
@@ -46,12 +47,29 @@ void Reference::mutate(void){
       n=nucleotide(rng);
    }while((p*CHAR_BIT+n)>=this->_nucleotides);*/
 
+	/*
    char value=(this->_data[p])&(mask<<n);
 
    if(!value) value=mask<<n;
    
    this->_data[p]^=value;
+   */
+   
+   // Version simplificada de mutacion a nivel de bit
+   uniform_int_distribution<> mutation(0U, (_nucleotides<<1) - 1);
+   unsigned int pos = mutation(rng);
+   unsigned int pos_byte = (pos>>3);
+   unsigned int pos_bit = (pos & 0x7);
+   unsigned int mask = (0x1 << pos_bit);
+   // cout<<"Reference::mutate - data["<<pos_byte<<"]: "<<(unsigned int)((unsigned char)_data[pos_byte])<<" (^= "<<mask<<" de "<<pos<<")\n";
+   _data[pos_byte] ^= mask;
+   // cout<<"Reference::mutate - res: "<<(unsigned int)((unsigned char)_data[pos_byte])<<"\n";
+   
 }
 Reference::~Reference(void){
    ;
 }
+
+
+
+

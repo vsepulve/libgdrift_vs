@@ -11,6 +11,7 @@
 #include <limits.h>
 
 #include <map>
+#include <set>
 #include <random>
 
 using namespace std;
@@ -42,8 +43,8 @@ protected:
 	bool owns_data;
 	
 	// Variables de la instancia (mutaciones)
-	map<seq_size_t, char> mutations;
-//	set<seq_size_t> mutations;
+	// map<seq_size_t, char> mutations;
+	set<seq_size_t> mutations;
 	
 	uint32_t cur_count;
 	bool cur_read;
@@ -66,8 +67,8 @@ public:
 	
 	string to_string();
 	
-	vector< pair<seq_size_t, char> > get_mutations();
-//	vector<seq_size_t> get_mutations();
+	// vector< pair<seq_size_t, char> > get_mutations();
+	vector<seq_size_t> get_mutations();
 	
 	void increase();
 	void decrease();
