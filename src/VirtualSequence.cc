@@ -396,7 +396,7 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 	return true;
 	*/
 	
-	cout<<"VirtualSequence::operator== - Inicio\n";
+	cout<<"VirtualSequence::operator== - Inicio ("<<(unsigned long long)this<<")\n";
 	
 	// Version detallada de revision por componente
 	if( length() != seq.length() ){
@@ -414,11 +414,13 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 		}
 		return true;
 	}
+//	cout<<"VirtualSequence::operator== - Peor caso\n";
 	for(unsigned int i = 0; i < length(); ++i ){
 		if(at(i) != seq.at(i)){
 			return false;
 		}
 	}
+//	cout<<"VirtualSequence::operator== - Iguales\n";
 	return true;
 	
 	/*
