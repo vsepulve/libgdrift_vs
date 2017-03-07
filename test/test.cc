@@ -4,6 +4,7 @@
 #include "VirtualSequence.h"
 #include "Reference.h"
 #include "Bitset.h"
+#include "NanoTimer.h"
 
 using namespace std;
 random_device seed;
@@ -177,6 +178,7 @@ int main(int argc,char** argv)
 	
 	
 	cout<<"Test - Inicio\n";
+	NanoTimer timer;
 	
 	boost::property_tree::ptree fsettings;
 	cout<<"Test - read_json...\n";
@@ -198,7 +200,7 @@ int main(int argc,char** argv)
 	cout<<"Test - delete sim...\n";
 	delete sim;
 	
-	cout<<"Test - Fin (const_str: "<<Bitset::count_str<<", const_int: "<<Bitset::count_int<<", const_copy: "<<Bitset::count_copy<<", const_del: "<<Bitset::count_del<<", const_mut: "<<Bitset::count_mut<<")\n";
+	cout<<"Test - Fin (const_str: "<<Bitset::count_str<<", const_int: "<<Bitset::count_int<<", const_copy: "<<Bitset::count_copy<<", const_del: "<<Bitset::count_del<<", const_mut: "<<Bitset::count_mut<<", time: "<<timer.getMilisec()<<" ms)\n";
 	return(0);
 	
 	

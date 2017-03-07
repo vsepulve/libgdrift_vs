@@ -122,18 +122,23 @@ void Simulator::run(void){
    		cout<<"Simulator::run - Creando Model\n";
       //this->_pool->decrease_all();
       Model m=Model(this->_fsettings.get_child("scenario").get<int>("model"));
+   	cout<<"Simulator::run - 1\n";
       switch(m){
          case WRIGHTFISHER:{
             Ploidy p=Ploidy(this->_fsettings.get_child("individual").get<int>("ploidy"));
             switch(p){
                case HAPLOID:{
+   		cout<<"Simulator::run - 2\n";
                   for(map<string,tuple<Population*,Population*>>::iterator i=this->_populations.begin();i!=this->_populations.end();i++){
                      model::run<WRIGHTFISHER,HAPLOID>(get<0>(i->second),get<1>(i->second),this->_pool);   
 							swap(get<0>(i->second),get<1>(i->second));
                   }
+                  
+   		cout<<"Simulator::run - 2 fin\n";
                   break;
                }  
                case DIPLOID:{
+   		cout<<"Simulator::run - 3\n";
                   for(map<string,tuple<Population*,Population*>>::iterator i=this->_populations.begin();i!=this->_populations.end();i++){
             
                   }

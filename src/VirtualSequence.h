@@ -76,6 +76,13 @@ public:
 	bool read_only() const;
 	bool operator==(const VirtualSequence&);
 	unsigned int length() const;
+				
+	// Contador de constructores
+	static unsigned int count_str;
+	static unsigned int count_int;
+	static unsigned int count_copy;
+	static unsigned int count_del;
+	static unsigned int count_mut;
 	
 };
 

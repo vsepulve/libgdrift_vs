@@ -3,6 +3,11 @@
 const unsigned int VirtualSequence::alphabet_size = 4;
 const char VirtualSequence::alphabet[] = {'A', 'C', 'G', 'T'};
 ////mt19937 VirtualSequence::class_rng;
+unsigned int VirtualSequence::count_str = 0;
+unsigned int VirtualSequence::count_int = 0;
+unsigned int VirtualSequence::count_copy = 0;
+unsigned int VirtualSequence::count_del = 0;
+unsigned int VirtualSequence::count_mut = 0;
 
 VirtualSequence::VirtualSequence(bool _read_only){
 
@@ -16,6 +21,7 @@ VirtualSequence::VirtualSequence(bool _read_only){
 
 // Constructor real que COPIA el buffer de texto
 VirtualSequence::VirtualSequence(const char *_ref, unsigned int _size, bool _read_only){
+	++count_str;
 	
 //	cout<<"VirtualSequence - Inicio (text: "<<_ref<<", size: "<<_size<<")\n";
 	size = (seq_size_t)_size;
@@ -62,7 +68,8 @@ VirtualSequence::VirtualSequence(const char *_ref, unsigned int _size, bool _rea
 // Constructor real que COPIA el buffer de texto, pero que recibe solo 1 entero (32 bits) de secuencia
 // Llena el resto de A's (con un memset... 0)
 VirtualSequence::VirtualSequence(const unsigned int _size, const unsigned int _seq, bool _read_only){
-
+	++count_int;
+	
 	size = (seq_size_t)_size;
 	unsigned int data_size = (size>>2);
 	if( size & 0x3 ){
@@ -105,6 +112,7 @@ VirtualSequence::VirtualSequence(const string &_ref, bool _read_only)
 // Constructor de copia que solo almacena un puntero al buffer de texto
 // Tambien incluye las mutaciones del original en el mapa de la nueva instancia
 VirtualSequence::VirtualSequence(const VirtualSequence &original){
+	++count_copy;
 	
 	//cout<<"VirtualSequence - Copia\n";
 	size = original.size;
@@ -121,6 +129,8 @@ VirtualSequence::VirtualSequence(const VirtualSequence &original){
 }
 
 VirtualSequence::~VirtualSequence(){
+	++count_del;
+	
 	mutations.clear();
 	if(owns_data){
 		delete [] data;
@@ -130,6 +140,8 @@ VirtualSequence::~VirtualSequence(){
 }
 
 void VirtualSequence::mutate(mt19937 *arg_rng){
+	++count_mut;
+	
 	// escoger al azar posicion
 	// mutar (agregar a mapa)
 	// para que esto sea totalmente efectivo, 
@@ -278,29 +290,29 @@ char VirtualSequence::at(seq_size_t pos) const{
 	// Version con mutaciones a nivel de bits
 	// Primero tomo el byte (data en posicion pos/4)
 	unsigned char byte = data[ pos>>2 ];
-	//cout<<"VirtualSequence::at - pos: "<<pos<<", byte: "<<(unsigned int)byte<<"\n";
+	cout<<"VirtualSequence::at - pos: "<<pos<<", byte: "<<(unsigned int)byte<<"\n";
 	// Ahora tomo el valor correcto del byte, los 2 bits que busco
 	// Para eso aplico la mascara 0x3 (2 bits) corrida en el resto de pos/4, x2
 	// El resto de pos/4 lo calculo como pos & 0x3 (por los 2 bits de la division)
 	// El x2 (porque son 2 bits por posicion) lo aplico con un <<1 adicional
 	unsigned char val = byte & (0x3 << ((pos & 0x3)<<1) );
-	//cout<<"VirtualSequence::at - val: "<<(unsigned int)val<<"\n";
+//	cout<<"VirtualSequence::at - val: "<<(unsigned int)val<<"\n";
 	// Por ultimo, muevo el valor (que estaba en medio del byte) a su posicion inicial
 	val >>= ((pos & 0x3)<<1);
-	//cout<<"VirtualSequence::at - val ajustado: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
+//	cout<<"VirtualSequence::at - val ajustado: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	// Ahora aplico mutaciones a ambos bits
 	seq_size_t pos_bit_1 = pos<<1;
 	seq_size_t pos_bit_2 = (pos<<1) + 1;
-	//cout<<"VirtualSequence::at - Buscando mutacion en bits: "<<pos_bit_1<<" y "<<pos_bit_2<<"\n";
+//	cout<<"VirtualSequence::at - Buscando mutacion en bits: "<<pos_bit_1<<" y "<<pos_bit_2<<"\n";
 	if(mutations.find(pos_bit_1) != mutations.end()){
 		val ^= 0x1;
-		//cout<<"VirtualSequence::at - val mut bit 1: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
+//		cout<<"VirtualSequence::at - val mut bit 1: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	}
 	if(mutations.find(pos_bit_2) != mutations.end()){
 		val ^= 0x2;
-		//cout<<"VirtualSequence::at - val mut bit 2: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
+//		cout<<"VirtualSequence::at - val mut bit 2: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	}
-	//cout<<"VirtualSequence::at - val final: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
+//	cout<<"VirtualSequence::at - val final: "<<(unsigned int)val<<" ("<<alphabet[val]<<")\n";
 	return alphabet[val];
 	
 }
@@ -384,6 +396,7 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 	return true;
 	*/
 	
+	cout<<"VirtualSequence::operator== - Inicio\n";
 	
 	// Version detallada de revision por componente
 	if( length() != seq.length() ){
