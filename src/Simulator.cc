@@ -11,7 +11,7 @@ void Simulator::run(void){
    uint32_t start=this->_evlist->top()->timestamp();
 
    for(uint32_t t=start;;t++){
-   		cout<<"Simulator::run - iteracion "<<t<<"\n";
+//   		cout<<"Simulator::run - iteracion "<<t<<"\n";
       while(!this->_evlist->empty() && this->_evlist->top()->timestamp()==t){
          Event* e=this->_evlist->top();
          this->_evlist->pop();
@@ -119,26 +119,26 @@ void Simulator::run(void){
          delete e;
       }
 
-   		cout<<"Simulator::run - Creando Model\n";
+//   		cout<<"Simulator::run - Creando Model\n";
       //this->_pool->decrease_all();
       Model m=Model(this->_fsettings.get_child("scenario").get<int>("model"));
-   	cout<<"Simulator::run - 1\n";
+//   	cout<<"Simulator::run - 1\n";
       switch(m){
          case WRIGHTFISHER:{
             Ploidy p=Ploidy(this->_fsettings.get_child("individual").get<int>("ploidy"));
             switch(p){
                case HAPLOID:{
-   		cout<<"Simulator::run - 2\n";
+//   		cout<<"Simulator::run - 2\n";
                   for(map<string,tuple<Population*,Population*>>::iterator i=this->_populations.begin();i!=this->_populations.end();i++){
                      model::run<WRIGHTFISHER,HAPLOID>(get<0>(i->second),get<1>(i->second),this->_pool);   
 							swap(get<0>(i->second),get<1>(i->second));
                   }
                   
-   		cout<<"Simulator::run - 2 fin\n";
+//   		cout<<"Simulator::run - 2 fin\n";
                   break;
                }  
                case DIPLOID:{
-   		cout<<"Simulator::run - 3\n";
+//   		cout<<"Simulator::run - 3\n";
                   for(map<string,tuple<Population*,Population*>>::iterator i=this->_populations.begin();i!=this->_populations.end();i++){
             
                   }
@@ -159,7 +159,7 @@ void Simulator::run(void){
       //this->_pool->release();
    }
    
-   	cout<<"Simulator::run - For terminado\n";
+//   	cout<<"Simulator::run - For terminado\n";
    	
 }
 vector<Population*> Simulator::populations(void){

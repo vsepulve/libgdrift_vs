@@ -170,6 +170,24 @@ int main(int argc,char** argv)
 	cout<<"s2: "<<s2<<" ("<<s2.length()<<")\n";
 	cout<<"-----\n";
 	delete seq_copy;
+	
+	// Mutacion por mascara
+	cout<<"Mutacion por mascara\n";
+	cout<<"s1: "<<s1<<" ("<<s1.length()<<")\n";
+	seq->mutateBitMask(6);
+	s1 = seq->to_string();
+	cout<<"s1: "<<s1<<" ("<<s1.length()<<")\n";
+	cout<<"-----\n";
+	cout<<"s1: "<<s1<<" ("<<s1.length()<<")\n";
+	seq->mutateBitMask(24582);
+	s1 = seq->to_string();
+	cout<<"s1: "<<s1<<" ("<<s1.length()<<")\n";
+	cout<<"-----\n";
+	cout<<"s1: "<<s1<<" ("<<s1.length()<<")\n";
+	seq->mutateBitMask(24582, 1);
+	s1 = seq->to_string();
+	cout<<"s1: "<<s1<<" ("<<s1.length()<<")\n";
+	cout<<"-----\n";
 	*/
 	
 	

@@ -48,6 +48,12 @@ protected:
 	
 	uint32_t cur_count;
 	bool cur_read;
+	
+	// Verifica si el espacio de mutaciones es demasiado, para aplicar descompresion
+	// En ese caso, pide memoria (si no tiene ya reservada), vuelca las mutaciones en data y elimina las mutaciones
+	// Deberia llamarse a este metodo luego de aplicar cualquier mutacion
+	// Este metodo debe considerar las diferentes formas de mutacion para el espacio
+	bool verifyDecompression();
 
 public:
 	
@@ -61,6 +67,13 @@ public:
 	
 	void mutate(mt19937 *arg_rng = NULL);
 	char at(seq_size_t pos) const;
+	
+	// Aplica una mutacion cambiando el BIT de la posicion absoluta pos 
+	void mutateBit(unsigned int pos);
+	
+	// Aplica una mutacion cambiando TODOS los bits de mask, partiendo desde el byte byte_ini de data
+	// Notar que esto puede modificar un maximo de 4 bytes (32 bits de mask)
+	void mutateBitMask(unsigned int mask, unsigned int byte_ini = 0);
 	
 //	void mutatePunctual();
 //	void mutateOTHER();

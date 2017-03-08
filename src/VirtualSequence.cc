@@ -139,6 +139,47 @@ VirtualSequence::~VirtualSequence(){
 	size = 0;
 }
 
+
+bool VirtualSequence::verifyDecompression(){
+	
+	// Condicion de descompresion
+	// Las mutaciones se vuelcan en un nuevo arreglo de datos si son muchas
+	// Falta revisar esta condicion para que sea mas clara y precisa
+	//cout<<"VirtualSequence::verifyDecompression - Mutaciones: "<<mutations.size()<<"\n";
+	if( mutations.size() >= size/4 ){
+		// Si NO es dueño de datos, pedirlos antes de agrgar mutaciones
+		// Si ya tiene datos, bsata con agregar las mutaciones
+		//cout<<"VirtualSequence::verifyDecompression - Descomprimiendo secuencia por numero de mutaciones\n";
+		if(!owns_data){
+			//cout<<"VirtualSequence::verifyDecompression - Pidiendo memoria\n";
+			unsigned char *original_data = data;
+			unsigned int data_size = (size>>2);
+			if( size & 0x3 ){
+				++data_size;
+			}
+			data = new unsigned char[ data_size ];
+			//memset(data, 0, data_size);
+			memcpy(data, original_data, size);
+			owns_data = true;
+		}
+		set<seq_size_t>::iterator it;
+		seq_size_t pos;
+		unsigned int pos_byte;
+		unsigned int pos_bit;
+		for(it = mutations.begin(); it != mutations.end(); it++){
+			pos = *it;
+			pos_byte = (pos >> 3);
+			pos_bit = (pos & 0x7);
+			data[pos_byte] ^= (0x1 << pos_bit);
+		}
+		mutations.clear();
+		
+		return true;
+	}
+	
+	return false;
+}
+
 void VirtualSequence::mutate(mt19937 *arg_rng){
 	++count_mut;
 	
@@ -222,41 +263,38 @@ void VirtualSequence::mutate(mt19937 *arg_rng){
 		mutations.erase(it);
 	}
 	
+	verifyDecompression();
 	
-	// Condicion de descompresion
-	// Las mutaciones se vuelcan en un nuevo arreglo de datos si son muchas
-	// Falta revisar esta condicion para que sea mas clara y precisa
-	//cout<<"VirtualSequence::mutate - Mutaciones: "<<mutations.size()<<"\n";
-	if( mutations.size() >= size/4 ){
-		// Si NO es dueño de datos, pedirlos antes de agrgar mutaciones
-		// Si ya tiene datos, bsata con agregar las mutaciones
-		//cout<<"VirtualSequence::mutate - Descomprimiendo secuencia por numero de mutaciones\n";
-		if(!owns_data){
-			//cout<<"VirtualSequence::mutate - Pidiendo memoria\n";
-			unsigned char *original_data = data;
-			unsigned int data_size = (size>>2);
-			if( size & 0x3 ){
-				++data_size;
-			}
-			data = new unsigned char[ data_size ];
-			//memset(data, 0, data_size);
-			memcpy(data, original_data, size);
-			owns_data = true;
-		}
-		set<seq_size_t>::iterator it;
-		seq_size_t pos;
-		unsigned int pos_byte;
-		unsigned int pos_bit;
-		for(it = mutations.begin(); it != mutations.end(); it++){
-			pos = *it;
-			pos_byte = (pos >> 3);
-			pos_bit = (pos & 0x7);
-			data[pos_byte] ^= (0x1 << pos_bit);
-		}
-		mutations.clear();
+}
+
+// Aplica una mutacion cambiando el BIT de la posicion absoluta pos 
+void VirtualSequence::mutateBit(unsigned int pos){
+	if(pos >= ((unsigned int)size<<1)){
+//		cout<<"VirtualSequence::mutateBit - Omitiendo bit "<<pos<<"\n";
+		return;
 	}
-	
-	
+//	cout<<"VirtualSequence::mutateBit - Modificando bit "<<pos<<"\n";
+	set<seq_size_t>::iterator it = mutations.find(pos);
+	if(it == mutations.end()){
+		mutations.insert(pos);
+	}
+	else{
+		mutations.erase(it);
+	}
+	verifyDecompression();
+}
+
+// Aplica una mutacion cambiando TODOS los bits de mask, partiendo desde el byte byte_ini de data
+// Notar que esto puede modificar un maximo de 4 bytes (32 bits de mask)
+void VirtualSequence::mutateBitMask(unsigned int mask, unsigned int byte_ini){
+	unsigned int bit_ini = (byte_ini<<3);
+	unsigned int test_mask = 0x1;
+	for(unsigned int pos_mask = 0; pos_mask < 32; ++pos_mask){
+		if( mask & test_mask ){
+			mutateBit(bit_ini + pos_mask);
+		}
+		test_mask <<= 1;
+	}
 }
 
 char VirtualSequence::at(seq_size_t pos) const{
@@ -290,7 +328,7 @@ char VirtualSequence::at(seq_size_t pos) const{
 	// Version con mutaciones a nivel de bits
 	// Primero tomo el byte (data en posicion pos/4)
 	unsigned char byte = data[ pos>>2 ];
-	cout<<"VirtualSequence::at - pos: "<<pos<<", byte: "<<(unsigned int)byte<<"\n";
+//	cout<<"VirtualSequence::at - pos: "<<pos<<", byte: "<<(unsigned int)byte<<"\n";
 	// Ahora tomo el valor correcto del byte, los 2 bits que busco
 	// Para eso aplico la mascara 0x3 (2 bits) corrida en el resto de pos/4, x2
 	// El resto de pos/4 lo calculo como pos & 0x3 (por los 2 bits de la division)
@@ -396,7 +434,7 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 	return true;
 	*/
 	
-	cout<<"VirtualSequence::operator== - Inicio ("<<(unsigned long long)this<<")\n";
+//	cout<<"VirtualSequence::operator== - Inicio ("<<(unsigned long long)this<<")\n";
 	
 	// Version detallada de revision por componente
 	if( length() != seq.length() ){
@@ -405,6 +443,10 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 	// Creo que esta comparacion hay que hacerla al reves, verificar si son iguales para acelerar, revisar por caracter si no se puede
 	// Eso es porque los datos PUEDEN ser diferentes y aun asi ser iguales las secuencias considerando las mutaciones
 	if( data == seq.data ){
+		if( mutations.size() != seq.mutations.size() ){
+			return false;
+		}
+//		cout<<"VirtualSequence::operator== - Comparando mutaciones\n";
 		// Solo en este caso se puede facilmente comparar las mutaciones sin los datos
 		set<seq_size_t>::const_iterator it1, it2;
 		for( it1 = mutations.begin(), it2 = seq.mutations.begin(); it1 != mutations.end(); it1++, it2++ ){

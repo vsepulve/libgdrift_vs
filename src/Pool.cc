@@ -61,14 +61,17 @@ void Pool::populate(const uint32_t &_cid,const uint32_t &_gid,const uint32_t &_n
 	}
 	
 	this->_pool[pair<uint32_t,uint32_t>(_cid,_gid)].reserve(_number_of_alleles);  
-		
+	
+	/*	
 	// Lo ideal seria, en lugar de esto, usar mutaciones de una misma secuencia
 	// Dado que, actualmente, se esta llenando con A's, voy a crear la primera con el constructor de texto
 	// Todas las demas, seran mutacion puntual de ese original
-//	for(uint32_t sequence=0U; sequence < _number_of_alleles; sequence++){
-//		VirtualSequence* reference=new VirtualSequence(_nucleotides,sequence);
-//		this->_pool[pair<uint32_t,uint32_t>(_cid,_gid)].push_back(reference);
-//	}
+	for(uint32_t sequence=0U; sequence < _number_of_alleles; sequence++){
+		VirtualSequence* reference=new VirtualSequence(_nucleotides,sequence);
+		this->_pool[pair<uint32_t,uint32_t>(_cid,_gid)].push_back(reference);
+	}
+	*/
+	
 	// Creacion del original
 	cout<<"Pool::populate - Creando original\n";
 	string texto_original(_nucleotides, 'A');
@@ -76,11 +79,11 @@ void Pool::populate(const uint32_t &_cid,const uint32_t &_gid,const uint32_t &_n
 	this->_pool[pair<uint32_t,uint32_t>(_cid,_gid)].push_back(inicial_ref);
 	cout<<"Pool::populate - Creando "<<_number_of_alleles-1<<" mutaciones adicionales\n";
 	// Llenado con mutaciones
-	// PRELIMINARMENTE estoy usando mutation directamente
-	// Quizas sea mejor un metodo que reciba el bit para modificar, o asegurar que sean diferentes de algun otro modo
+	// Uso el metodo mutateBitMask que recibe una mascara (sequence) para modificar todos esos bits
 	for(uint32_t sequence = 1; sequence < _number_of_alleles; ++sequence){
 		VirtualSequence *reference = new VirtualSequence(*inicial_ref);
-		reference->mutate();
+//		reference->mutate();
+		reference->mutateBitMask(sequence);
 		this->_pool[pair<uint32_t,uint32_t>(_cid,_gid)].push_back(reference);
 	}
 	cout<<"Pool::populate - Fin\n";
