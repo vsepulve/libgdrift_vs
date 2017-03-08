@@ -192,7 +192,7 @@ int main(int argc,char** argv)
 	
 	
 	
-	
+	rng.seed(0);
 	
 	
 	cout<<"Test - Inicio\n";
@@ -206,6 +206,8 @@ int main(int argc,char** argv)
 	Simulator *sim = new Simulator(fsettings);
 	cout<<"Test - sim->run...\n";
 	sim->run();
+	cout<<"Test - sim->run terminado en "<<timer.getMilisec()<<" ms\n";
+	timer.reset();
 	
 	cout<<"Test - sim->populations...\n";
 	for(auto p : sim->populations()){
@@ -214,11 +216,12 @@ int main(int argc,char** argv)
 		write_json(ss,findices);
 		cout << ss.str() << endl;
 	}
-
-	cout<<"Test - delete sim...\n";
+	cout<<"Test - populations terminado en "<<timer.getMilisec()<<" ms\n";
+	
 	delete sim;
 	
-	cout<<"Test - Fin (const_str: "<<Bitset::count_str<<", const_int: "<<Bitset::count_int<<", const_copy: "<<Bitset::count_copy<<", const_del: "<<Bitset::count_del<<", const_mut: "<<Bitset::count_mut<<", time: "<<timer.getMilisec()<<" ms)\n";
+	cout<<"Test - Fin (const_str: "<<VirtualSequence::count_str<<", const_int: "<<VirtualSequence::count_int<<", const_copy: "<<VirtualSequence::count_copy<<", const_del: "<<VirtualSequence::count_del<<", const_mut: "<<VirtualSequence::count_mut<<", const_mem: "<<VirtualSequence::count_mem<<")\n";
+//	cout<<"Test - Fin (const_str: "<<Bitset::count_str<<", const_int: "<<Bitset::count_int<<", const_copy: "<<Bitset::count_copy<<", const_del: "<<Bitset::count_del<<", const_mut: "<<Bitset::count_mut<<")\n";
 	return(0);
 	
 	

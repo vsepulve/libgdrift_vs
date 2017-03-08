@@ -104,45 +104,48 @@ class Population{
 			}
 			
 			double number_of_haplotypes(const vector<string> &_sequences){
-				map<string,double> haplotypes;
-
+			
+				map<string, double> haplotypes;
 				for(auto& seq : _sequences) haplotypes[seq]=(haplotypes.count(seq))?haplotypes[seq]+1.0:1.0;
 
 				double sum=0.0;
-				double N=double(_sequences.size());
+				double N = double(_sequences.size());
 				for(auto& h : haplotypes){
-					double x=double(h.second)/N;
-					sum+=(x*x);
+					double x = double(h.second)/N;
+					sum += (x*x);
 				}
 
 				haplotypes.clear();
-				return((N/(N-1.0))*(1.0-sum));
+				return (N/(N-1.0))*(1.0-sum);
 			}
 			
-			/*
+			
 			double number_of_haplotypes_seq(const vector<VirtualSequence*> &_sequences){
+			
+				map<string, double> haplotypes;
+//				for(auto& seq : _sequences) haplotypes[seq]=(haplotypes.count(seq))?haplotypes[seq]+1.0:1.0;
 				
-				map< vector< pair<seq_size_t, char> > , double> haplotypes;
-				
-				// for(auto& seq : _sequences) haplotypes[seq] = (haplotypes.count(seq))?haplotypes[seq]+1.0:1.0;
-				
+				string str;
 				for(unsigned int i = 0; i < _sequences.size(); ++i){
-					vector< pair<seq_size_t, char> > mutations = _sequences[i]->get_mutations();
-					haplotypes[mutations] = (haplotypes.count(mutations))?haplotypes[mutations]+1.0:1.0;
+//					vector< pair<seq_size_t, char> > mutations = _sequences[i]->get_mutations();
+//					haplotypes[mutations] = (haplotypes.count(mutations))?haplotypes[mutations]+1.0:1.0;
+					str = _sequences[i]->to_string();
+					haplotypes.emplace(str, 0.0);
+					haplotypes[str] += 1;
 				}
 				
 				double sum=0.0;
 				double N = double(_sequences.size());
 				for(auto& h : haplotypes){
 					double x = double(h.second)/N;
-					sum+=(x*x);
+					sum += (x*x);
 				}
 
 				haplotypes.clear();
 				return (N/(N-1.0))*(1.0-sum);
 				
 			}
-			*/
+			
 			
 			double number_of_segregating_sites(const vector<string> &_sequences){
 				double segregating_sites=0.0;

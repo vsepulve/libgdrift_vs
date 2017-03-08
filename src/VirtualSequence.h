@@ -94,6 +94,7 @@ public:
 	static unsigned int count_str;
 	static unsigned int count_int;
 	static unsigned int count_copy;
+	static unsigned int count_mem;
 	static unsigned int count_del;
 	static unsigned int count_mut;
 	

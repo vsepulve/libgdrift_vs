@@ -6,6 +6,7 @@ const char VirtualSequence::alphabet[] = {'A', 'C', 'G', 'T'};
 unsigned int VirtualSequence::count_str = 0;
 unsigned int VirtualSequence::count_int = 0;
 unsigned int VirtualSequence::count_copy = 0;
+unsigned int VirtualSequence::count_mem = 0;
 unsigned int VirtualSequence::count_del = 0;
 unsigned int VirtualSequence::count_mut = 0;
 
@@ -22,6 +23,7 @@ VirtualSequence::VirtualSequence(bool _read_only){
 // Constructor real que COPIA el buffer de texto
 VirtualSequence::VirtualSequence(const char *_ref, unsigned int _size, bool _read_only){
 	++count_str;
+	++count_mem;
 	
 //	cout<<"VirtualSequence - Inicio (text: "<<_ref<<", size: "<<_size<<")\n";
 	size = (seq_size_t)_size;
@@ -69,6 +71,7 @@ VirtualSequence::VirtualSequence(const char *_ref, unsigned int _size, bool _rea
 // Llena el resto de A's (con un memset... 0)
 VirtualSequence::VirtualSequence(const unsigned int _size, const unsigned int _seq, bool _read_only){
 	++count_int;
+	++count_mem;
 	
 	size = (seq_size_t)_size;
 	unsigned int data_size = (size>>2);
@@ -151,6 +154,7 @@ bool VirtualSequence::verifyDecompression(){
 		// Si ya tiene datos, bsata con agregar las mutaciones
 		//cout<<"VirtualSequence::verifyDecompression - Descomprimiendo secuencia por numero de mutaciones\n";
 		if(!owns_data){
+			++count_mem;
 			//cout<<"VirtualSequence::verifyDecompression - Pidiendo memoria\n";
 			unsigned char *original_data = data;
 			unsigned int data_size = (size>>2);
@@ -287,6 +291,7 @@ void VirtualSequence::mutateBit(unsigned int pos){
 // Aplica una mutacion cambiando TODOS los bits de mask, partiendo desde el byte byte_ini de data
 // Notar que esto puede modificar un maximo de 4 bytes (32 bits de mask)
 void VirtualSequence::mutateBitMask(unsigned int mask, unsigned int byte_ini){
+	++count_mut;
 	unsigned int bit_ini = (byte_ini<<3);
 	unsigned int test_mask = 0x1;
 	for(unsigned int pos_mask = 0; pos_mask < 32; ++pos_mask){
@@ -464,27 +469,6 @@ bool VirtualSequence::operator==(const VirtualSequence &seq){
 	}
 //	cout<<"VirtualSequence::operator== - Iguales\n";
 	return true;
-	
-	/*
-	if( data != seq.data ){
-		// aqui habria que comparar los bytes
-		for(unsigned int i = 0; i < size; ++i){
-			if(data[i] != seq.data[i]){
-				return false;
-			}
-		}
-	}
-	// Solo si los datos son iguales, es necesario comparar mutaciones
-	set<seq_size_t>::const_iterator it1, it2;
-	for( it1 = mutations.begin(), it2 = seq.mutations.begin(); it1 != mutations.end(); it1++, it2++ ){
-		if( *it1 != *it2 ){
-			return false;
-		}
-	}
-	return true;
-	*/
-	
-	
 	
 }
 
